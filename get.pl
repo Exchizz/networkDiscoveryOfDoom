@@ -4,7 +4,7 @@ use Getopt::Long;
 use Net::SNMP;
 use Data::Dumper;
 use Net::SNMP::Interfaces;
-
+    use Socket;
 my $ifname;
 my $hostname;
 my $community;
@@ -44,5 +44,8 @@ my $version = 1;
 my $mac_addr = "b8:27:eb:24:ef:63";
 my $ip = `/usr/sbin/arp-scan --interface labvpn  --localnet | grep -i $mac_addr | awk '{print \$1}'`;
 chomp $ip;
-print "mac: $mac_addr => ip: $ip\n";
+print "mac: $mac_addr => ip: $ip hostname: ";
+my $iaddr = inet_aton($ip); # or whatever address
+my $name  = gethostbyaddr($iaddr, AF_INET);
+print $name."\n";
 
