@@ -12,42 +12,64 @@ my $ifname;
 my $hostname;
 my $community;
 my $version = 1;
-
-
+my $entry_switch = "192.168.254.14";
 
 # Make sure this script is run as root (required by arp-scan :> )
 die("This script must be run as root") unless  $> == 0;
 
 
 
-#GetOptions( "ifname=s"      => \$ifname,
-#            "host=s"        => \$hostname,
-#            "community=s"   => \$community,
-#            "protocol:s"    => \$version);
-#
-#print "Running\n";
-#my $interfaces = Net::SNMP::Interfaces->new(Hostname => $hostname, Community => $community);
-#my @interfaces = $interfaces->all_interfaces();
-#my $inter = $interfaces->interface($ifname);
-#
-#
-##We get the index of $ifname
-#my $ifindex = $inter->index();
-##Speed
-#my $vitesse = $inter->ifHighSpeed();
-##Alias
-#my $ifalias = $inter->ifAlias();
-#my $ifdescr = $inter->ifDescr();
-#my $ifstatus = $inter->ifOperStatus();
-#
-#foreach my $interface (@interfaces) {
-#	print "index: ", $interface->index(), " speed: ",$interface->ifHighSpeed(), " ifalias: ", $interface->ifAlias()," description: ",$interface->ifDescr(), " status: ", $interface->ifOperStatus()."\n";
-#}
-#
-#my $session = $interfaces->session();
-#
-#my $result = $session->get_table("1.3.6.1.2.1.17.7.1.2.2.1.2");
-#print Dumper $result;
+GetOptions( "ifname=s"      => \$ifname,
+            "host=s"        => \$hostname,
+	    "entryswitch=s" => \$entry_switch,
+            "community=s"   => \$community,
+            "protocol:s"    => \$version);
+
+sub snmp_get_mac_addr_list {
+	my ($ip) = @_;
+
+	my $interfaces = Net::SNMP::Interfaces->new(Hostname => $ip, Community => $community);
+	unless ($interfaces){
+		print "Unable to connect to IP: $ip, does not seem to be a switch" ;
+		return undef;
+	}
+	my @interfaces = $interfaces->all_interfaces();
+	#my $inter = $interfaces->interface($ifname);
+	
+	
+	#We get the index of $ifname
+	#my $ifindex = $inter->index();
+	##Speed
+	#my $vitesse = $inter->ifHighSpeed();
+	##Alias
+	#my $ifalias = $inter->ifAlias();
+	#my $ifdescr = $inter->ifDescr();
+	#my $ifstatus = $inter->ifOperStatus();
+	#
+	#foreach my $interface (@interfaces) {
+	#	print "index: ", $interface->index(), " speed: ",$interface->ifHighSpeed(), " ifalias: ", $interface->ifAlias()," description: ",$interface->ifDescr(), " status: ", $interface->ifOperStatus()."\n";
+	#}
+
+	my $session = $interfaces->session();
+	
+
+	my $oid = "1.3.6.1.2.1.17.7.1.2.2.1.2";
+	my $results = $session->get_table($oid);
+
+	my $vlan = "(\\d{1,3})";
+	my $mac_dec = "((?>[\\d]+[\.]?){6})";
+
+	foreach my $result (keys %{$results}){
+	        my ($a,$b) = $result =~ /^$oid\.$vlan\.$mac_dec$/;
+		print "a: $a, b: $b\n";
+
+	}
+	return ();
+}
+
+
+my @rsp = snmp_get_mac_addr_list($entry_switch);
+die();
 
 
 
