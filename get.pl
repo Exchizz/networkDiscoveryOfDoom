@@ -56,33 +56,38 @@ sub snmp_get_mac_addr_list {
 	my $oid = "1.3.6.1.2.1.17.7.1.2.2.1.2";
 	my $results = $session->get_table($oid);
 
-	my $vlan = "(\\d{1,3})";
-	my $mac_dec = "((?>[\\d]+[\.]?){6})";
+	my $regex_vlan = "(\\d{1,3})";
+	my $regex_mac_dec = "((?>[\\d]+[\.]?){6})";
 
+	my @ret = ();
 	foreach my $result (keys %{$results}){
-	        my ($a,$b) = $result =~ /^$oid\.$vlan\.$mac_dec$/;
-		print "a: $a, b: $b\n";
+	        my ($vlan, $mac_dec) = $result =~ /^$oid\.$regex_vlan\.$regex_mac_dec$/;
 
+		# Convert dec to hex
+	        my $mac_hex = $mac_dec =~ s/([\d]{1,3})[\s]?/sprintf("%02x", $1)/gre;	
+		
+		# Replace '.' with ':'
+		$mac_hex =~ s/\./:/g;
+		push @ret, $mac_hex;
 	}
-	return ();
+	return @ret;
 }
-
-
-my @rsp = snmp_get_mac_addr_list($entry_switch);
-die();
-
-
-
-#my $mac_addr = "b8:27:eb:24:ef:63";
-#print $host."\n";
 
 my @ifaces = ("labvpn","mgmtvpn");
 
+my @rsp = snmp_get_mac_addr_list($entry_switch);
+print Dumper @rsp;
+foreach my $mac (@rsp){
+	my $hostname = mac2hostname($mac);
+	print "Mac. $mac\tHostname: $hostname\n";
+}
 
-my $mac = "b8:27:eb:b1:9b:d2";
-
-my $name = mac2hostname($mac);
-print "name: ".$name."\n";
+#my $mac_addr = "b8:27:eb:24:ef:63";
+#print $host."\n";
+#my $mac = "b8:27:eb:b1:9b:d2";
+#
+#my $name = mac2hostname($mac);
+#print "name: ".$name."\n";
 
 sub valid_mac {
 	my ($input_mac) = @_;
@@ -102,7 +107,7 @@ sub mac2hostname {
 	}
 
 	unless($ip){
-		print "No IP found to MAC: $mac\n";
+		print "No IP found to MAC: $mac_addr\n";
 		return undef;
 	}
 
@@ -125,8 +130,8 @@ sub ip2hostname {
 	my $iaddr = inet_aton($ip); # or whatever address
 	my $name  = gethostbyaddr($iaddr, AF_INET);
 	unless ($name){
-		print "No hostname is available for IP: ". $ip."\n";
-		return undef;
+		#print "No hostname is available for IP: ". $ip."\n";
+		return "N/A";
 	}
 	return $name;
 }
