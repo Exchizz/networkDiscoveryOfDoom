@@ -53,9 +53,7 @@ while(@to_be_discovered){
 	my %tmp = discover_switch($ip);
 	store \%tmp, 'debug';
 	#my %tmp = %{retrieve('debug')};
-	foreach my $s (keys %tmp){
-		my $a = $tmp{$s};
-		my $ip = $a->{'IP'};
+	foreach my $ip (keys %tmp){
 		print "Uplink ip: $ip\n";
 		if(!exists $is_discovered{$ip}){
 			print "Adding $ip to \"to_be_discovered\"\n";
@@ -150,8 +148,8 @@ sub lldp_get_switches {
 	   my $neighbor      = $lldp_ip->{$lldp_key};
 	   my $neighbor_port = $lldp_port->{$lldp_key};
 	   my $LAG = snmp_port2lag($ip,$port, $interface_map);
-	   $uplinks{$LAG}{'IP'} = $neighbor;
-	   push @{$uplinks{$LAG}{'ports'}}, {"port" => $port};
+	   $uplinks{$neighbor} = 1;
+	   #push @{$uplinks{$LAG}{'ports'}}, {"port" => $port};
 	}
 	return %uplinks;
 }
