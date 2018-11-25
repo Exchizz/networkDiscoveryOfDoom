@@ -70,10 +70,40 @@ while(@to_be_discovered){
 print "Network successfully discovered\n";
 
 
+sub snmp_get_device_information {
+	my ($switch_ip) = @_;
+
+	my $session = Net::SNMP->session(-hostname => $switch_ip, -community => "public");
+
+	unless ($session){
+		print "Unable to connect to switch on ip: $switch_ip\n";
+		return ();
+	}
+
+
+
+	# Get location
+        my $oid = "1.3.6.1.2.1.1.6.0";
+        my $location_rsp = $session->get_request($oid);
+        my $location = $location_rsp->{$oid};
+
+	# Get system name
+	$oid = "1.3.6.1.2.1.1.5.0";
+	my $sysname_rsp = $session->get_request($oid);
+	my $sysname = $sysname_rsp->{$oid};
+
+	return ("location" => $location, "sysname" => $sysname);
+}
+
 
 sub discover_switch {
 	my ($switch_ip) = @_;
 	
+
+	my %device_information = snmp_get_device_information($switch_ip);
+	return () if(!keys %device_information);
+
+	$network{$switch_ip}{'info'} = \%device_information;
 	my $interface_map = snmp_get_ifnames($switch_ip);
 	return () unless $interface_map;
 
