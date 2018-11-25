@@ -51,6 +51,8 @@ while(@to_be_discovered){
 	my $ip = shift @to_be_discovered;
 	print "Discovering $ip\n";
 	my %tmp = discover_switch($ip);
+	next if !keys %tmp;
+
 	store \%tmp, 'debug';
 	#my %tmp = %{retrieve('debug')};
 	foreach my $ip (keys %tmp){
@@ -65,6 +67,7 @@ while(@to_be_discovered){
 	store \%network, 'network';
 }
 
+print "Network successfully discovered\n";
 
 
 
@@ -72,6 +75,8 @@ sub discover_switch {
 	my ($switch_ip) = @_;
 	
 	my $interface_map = snmp_get_ifnames($switch_ip);
+	return () unless $interface_map;
+
 	my %rsp = snmp_get_mac_addr_list($switch_ip);
 	
 	my %management_interfaces;
@@ -95,11 +100,9 @@ sub discover_switch {
 				$management_interfaces{$ifaze} = 1;
 			} else {
 				print "$ip is not mgmt\n";
-				push @{$network{$switch_ip}{$ifaze}}, {"ip" => $ip, "mac" => $mac};
+				my $hostname = ip2hostname($ip);
+				push @{$network{$switch_ip}{$ifaze}}, {"ip" => $ip, "mac" => $mac, "hostname" => $hostname};
 			}
-			#		my $hostname = ip2hostname($ip);
-			#		print "debug: ".$mac."\tIP:".$ip."\tHostname:".$hostname."\n";
-			#		#		print "debug: ".%{@{$mac}[0]}{'mac'}."\n";
 		}
 	
 	}
